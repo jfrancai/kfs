@@ -201,7 +201,7 @@ void kernel_main(void)
 	terminal_writestring("Welcome - 42");
 
 	uint16_t irr = pic_get_irr();
-	if (irr & (1 << 1) + 1) {
+	if (irr & ((1 << 1) + 1)) {
 		terminal_writestring("key pressed");
 		PIC_sendEOI(1);  // Send EOI to the master PIC (IRQ1)
 	}
