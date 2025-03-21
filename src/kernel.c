@@ -98,6 +98,18 @@ uint16_t pic_get_isr(void)
     return __pic_get_irq_reg(PIC_READ_ISR);
 }
 
+
+void keyboard_handler(void)
+{
+    uint8_t scancode = inb(0x60); // Read from the keyboard data port (0x60)
+
+    // You can add more code to handle specific keys if necessary.
+    terminal_writestring("key pressed\n");
+
+    // Send EOI to PIC after handling IRQ1 (keyboard interrupt)
+    PIC_sendEOI(1);
+}
+
 void kernel_main(void) 
 {
 	/* Initialize terminal interface */
@@ -106,9 +118,15 @@ void kernel_main(void)
 	/* Newline support is left as an exercise. */
 	terminal_writestring("Welcome - 42");
 
-	uint16_t irr = pic_get_irr();
-	if (irr & ((1 << 1) + 1)) {
-		terminal_writestring("key pressed");
-		PIC_sendEOI(1);  // Send EOI to the master PIC (IRQ1)
-	}
+    while(1)
+    {
+        // Poll for the interrupt register to check if IRQ1 (keyboard interrupt) is set
+        uint16_t irr = pic_get_irr();
+        
+        // If IRQ1 is set (keyboard interrupt), call the keyboard handler
+        if (irr & (1 << 1)) 
+        {
+            keyboard_handler();
+        }
+    }
 }

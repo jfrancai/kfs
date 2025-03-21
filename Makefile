@@ -51,7 +51,7 @@ clean:
 re: clean all
 
 start: myos.bin
-	qemu-system-i386 -kernel myos.bin
+	qemu-system-i386 -kernel myos.bin -device i8042
 
 start-iso: myos.iso
 	qemu-system-i386 -cdrom myos.iso
