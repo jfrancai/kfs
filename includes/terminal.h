@@ -14,5 +14,6 @@ void terminal_putchar(char c);
 void terminal_writehex(uint8_t num);
 void update_cursor();
 void poll_keyboard();
+void init_key_handlers();
 
 #endif

@@ -4,6 +4,12 @@
 #define KEYBOARD_STATUS_PORT  0x64
 #define KEYBOARD_DATA_PORT    0x60
 
+// Arrow key scancodes
+#define SC_UP    0x48
+#define SC_DOWN  0x50
+#define SC_LEFT  0x4B
+#define SC_RIGHT 0x4D
+
 #define VIDEO_MEMORY (char*)0xB8000
 
 size_t terminal_row;
@@ -27,6 +33,21 @@ char scancode_to_char[128] = {
 };
 
 static uint16_t cursor_x = 0, cursor_y = 0;
+
+void move_cursor_up()    { if (terminal_row > 0) terminal_row--; update_cursor(); }
+void move_cursor_down()  { if (terminal_row < VGA_HEIGHT - 1) terminal_row++; update_cursor(); }
+void move_cursor_left()  { if (terminal_column > 0) terminal_column--; update_cursor(); }
+void move_cursor_right() { if (terminal_column < VGA_WIDTH - 1) terminal_column++; update_cursor(); }
+
+void (*key_handlers[128])(void) = { 0 };
+
+// Initialize the key handler table
+void init_key_handlers() {
+    key_handlers[SC_UP] = move_cursor_up;
+    key_handlers[SC_DOWN] = move_cursor_down;
+    key_handlers[SC_LEFT] = move_cursor_left;
+    key_handlers[SC_RIGHT] = move_cursor_right;
+}
 
 
 /* Hardware text mode color constants. */
@@ -186,10 +207,15 @@ void terminal_writehex(uint8_t num)
 void handle_scancode(uint8_t scancode)
 {
 	if (scancode < 128) {
-		char c = scancode_to_char[scancode];
-		terminal_putchar(c);
+		if (key_handlers[scancode]) {
+			key_handlers[scancode]();  // Call function from lookup table
+		} else {
+			char c = scancode_to_char[scancode];
+			if (c) {
+				terminal_putchar(c);
+			}
+		}
 	}
-	/* terminal_writehex(scancode); */
 }
 
 void poll_keyboard()
@@ -200,3 +226,5 @@ void poll_keyboard()
 		handle_scancode(scancode);
 	}
 }
+
+
