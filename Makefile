@@ -30,6 +30,9 @@ CFLAGS := -I ./includes/ -g -ffreestanding -O2 -std=gnu99 $(WARNINGS)
 boot.o: boot.s
 	$(TARGET)-as ./boot.s -o boot.o
 
+# interrupts.o: interrupts.s
+# 	nasm -f elf32 interrupts.s -o interrupts.o
+
 myos.bin: boot.o $(OBJFILES)
 	$(CC) -T linker.ld -o myos.bin -ffreestanding -O2 -nostdlib boot.o $(OBJFILES) -lgcc
 
@@ -43,7 +46,7 @@ all: myos.bin
 
 clean:
 	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) pdclib.a pdclib.tgz)
-	$(RM) boot.o
+	$(RM) boot.o 
 	$(RM) $(OBJFILES)
 	$(RM) myos.bin
 	$(RM) myos.iso
@@ -51,7 +54,7 @@ clean:
 re: clean all
 
 start: myos.bin
-	qemu-system-i386 -kernel myos.bin -device i8042
+	qemu-system-i386 -kernel myos.bin
 
 start-iso: myos.iso
 	qemu-system-i386 -cdrom myos.iso
