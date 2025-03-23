@@ -81,7 +81,8 @@ static inline void outb(uint16_t port, uint8_t data) {
 
 
 void update_cursor() {
-    uint16_t pos = cursor_y * VGA_WIDTH + cursor_x;
+	uint16_t pos = terminal_row * VGA_WIDTH + terminal_column;
+
 
     outb(0x3D4, 0x0F);
     outb(0x3D5, (uint8_t)(pos & 0xFF));
@@ -130,9 +131,17 @@ void terminal_putchar(char c)
         terminal_row++;
     } 
     else if (c == '\b' && terminal_column > 0) { // Handle Backspace
-        terminal_column--;
-        terminal_putentryat(' ', terminal_color, terminal_column, terminal_row); // Clear char
-    } 
+		terminal_column--; // Move cursor left
+		terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
+		if (terminal_column == 0) {
+			terminal_row--; 
+			size_t last_col = VGA_WIDTH - 1; // Move to end of previous line
+			while (last_col > 0 && (terminal_getentryat(last_col, terminal_row) & 0xFF) == ' ') {
+				last_col--;
+			}
+			terminal_column = last_col + 1;
+		}
+	} 
     else { // Print normal character
         terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
         terminal_column++;
@@ -157,6 +166,10 @@ void terminal_putchar(char c)
 
         terminal_row = VGA_HEIGHT - 1;
     }
+
+    // **Sync cursor with terminal position**
+    cursor_x = terminal_column;
+    cursor_y = terminal_row;
 
     update_cursor();
 }
