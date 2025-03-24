@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "keyboard.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -13,14 +14,14 @@
 
 void kernel_main(void) 
 {
-    terminal_initialize();
-    terminal_writestring("Welcome - 42\n");
+  terminal_initialize();
+  terminal_writestring("Welcome - 42\n");
 
-	update_cursor();
-	init_key_handlers();
+  update_cursor();
+  init_key_handlers();
 
-    while (1)
-    {
-		poll_keyboard();
-    }
+  while (1)
+  {
+    poll_keyboard();
+  }
 }

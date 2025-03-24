@@ -8,6 +8,15 @@
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
 
+typedef struct {
+    size_t row;
+    size_t column;
+    uint8_t color;
+    uint16_t* buffer;
+} Terminal;
+
+extern Terminal terminal;
+
 void terminal_initialize(void);
 void terminal_setcolor(uint8_t color);
 void terminal_putchar(char c);
