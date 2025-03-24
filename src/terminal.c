@@ -255,25 +255,30 @@ void poll_keyboard()
 }
 
 void terminal_initialize(void) {
-    for (size_t i = 0; i < NUM_SCREENS; i++) {
-        screen_rows[i] = 0;
-        screen_columns[i] = 0;
-        memset(screen_buffers[i], ' ', 2000 * sizeof(uint16_t));
+  for (size_t i = 0; i < NUM_SCREENS; i++) {
+    screen_rows[i] = 0;
+    screen_columns[i] = 0;
+    uint8_t color = vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK);
+    for (size_t y = 0; y < VGA_HEIGHT; y++) {
+      for (size_t x = 0; x < VGA_WIDTH; x++) {
+        const size_t index = y * VGA_WIDTH + x;
+        screen_buffers[i][index] = vga_entry(' ', color);
+      }
     }
+  }
 
-    current_screen = 0;
-    terminal_buffer = screen_buffers[current_screen];
+  current_screen = 1;
+  terminal_buffer = screen_buffers[current_screen];
 
-    terminal_row = 0;
-    terminal_column = 0;
-    terminal_color = vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK);
+  terminal_row = 0;
+  terminal_column = 0;
+  terminal_color = vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK);
 
-	terminal_buffer = (uint16_t*) 0xB8000;
-	for (size_t y = 0; y < VGA_HEIGHT; y++) {
-		for (size_t x = 0; x < VGA_WIDTH; x++) {
-			const size_t index = y * VGA_WIDTH + x;
-			terminal_buffer[index] = vga_entry(' ', terminal_color);
-		}
-	}
+  terminal_buffer = (uint16_t*) 0xB8000;
+  for (size_t y = 0; y < VGA_HEIGHT; y++) {
+    for (size_t x = 0; x < VGA_WIDTH; x++) {
+      const size_t index = y * VGA_WIDTH + x;
+      terminal_buffer[index] = vga_entry(' ', terminal_color);
+    }
+  }
 }
-
