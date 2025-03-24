@@ -5,7 +5,7 @@
 
 #define VIDEO_MEMORY (char*)0xB8000
 
-#define NUM_SCREENS 5
+#define NUM_SCREENS 3
 
 static uint16_t cursor_x = 0, cursor_y = 0;
 
@@ -141,7 +141,7 @@ void terminal_initialize(void) {
     }
   }
 
-  current_screen = 1;
+  current_screen = 0;
   terminal.buffer = screen_buffers[current_screen];
 
   terminal.row = 0;
