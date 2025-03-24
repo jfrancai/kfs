@@ -4,13 +4,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// VGA-related definitions
+#define VGA_WIDTH  80
+#define VGA_HEIGHT 25
 
 void terminal_initialize(void);
-void terminal_writestring(const char* data);
+void terminal_setcolor(uint8_t color);
 void terminal_putchar(char c);
+void terminal_write(const char* data, size_t size);
+void terminal_writestring(const char* data);
 void terminal_writehex(uint8_t num);
-void update_cursor();
-void poll_keyboard();
-void init_key_handlers();
+void move_cursor(int x, int y);
+void update_cursor(void);
+void switch_screen(uint8_t screen);
 
-#endif
+#endif // TERMINAL_H
+
