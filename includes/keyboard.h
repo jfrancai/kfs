@@ -3,6 +3,21 @@
 
 #include <stdint.h>
 
+#define KEYBOARD_STATUS_PORT  0x64
+#define KEYBOARD_DATA_PORT    0x60
+
+// Arrow key scancodes
+enum {
+    SC_UP    = 0x48,
+    SC_DOWN  = 0x50,
+    SC_LEFT  = 0x4B,
+    SC_RIGHT = 0x4D,
+    SC_ALT   = 0x38,
+    SC_ALT_RELEASE = 0xB8,
+    SC_F1 = 0x3B, 
+    SC_F3 = 0x3D 
+};
+
 void init_key_handlers(void);
 void poll_keyboard(void);
 void handle_scancode(uint8_t scancode);

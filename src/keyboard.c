@@ -2,15 +2,6 @@
 #include "ports.h"
 #include "terminal.h"
 
-#define KEYBOARD_STATUS_PORT  0x64
-#define KEYBOARD_DATA_PORT    0x60
-
-// Arrow key scancodes
-#define SC_UP    0x48
-#define SC_DOWN  0x50
-#define SC_LEFT  0x4B
-#define SC_RIGHT 0x4D
-
 char scancode_to_char[128] = {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',  
     '\t',  
