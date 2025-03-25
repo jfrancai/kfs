@@ -7,7 +7,7 @@
 
 #define NUM_SCREENS 9
 
-static uint16_t cursor_x = 0, cursor_y = 0;
+static size_t cursor_x = 0, cursor_y = 0;
 
 static uint16_t screen_buffers[NUM_SCREENS][2000];
 static size_t screen_rows[NUM_SCREENS] = {0}; // Initialize to zero
@@ -27,13 +27,13 @@ void terminal_setcolor(uint8_t color)
     terminal.color = color;
 }
 
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
+static void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
 {
     const size_t index = y * VGA_WIDTH + x;
     terminal.buffer[index] = vga_entry(c, color);
 }
 
-uint16_t terminal_getentryat(size_t x, size_t y)
+static uint16_t terminal_getentryat(size_t x, size_t y)
 {
     const size_t index = y * VGA_WIDTH + x;
     return terminal.buffer[index];
@@ -68,14 +68,14 @@ void terminal_putchar(char c)
     }
 
     if (terminal.row >= VGA_HEIGHT) { // Scroll screen if needed
-        for (int y = 1; y < VGA_HEIGHT; y++) {
-            for (int x = 0; x < VGA_WIDTH; x++) {
+        for (size_t y = 1; y < VGA_HEIGHT; y++) {
+            for (size_t x = 0; x < VGA_WIDTH; x++) {
                 uint16_t entry = terminal_getentryat(x, y); // Get previous row
-                terminal_putentryat(entry, terminal.color, x, y - 1); // Move up
+                terminal_putentryat((char)entry, terminal.color, x, y - 1); // Move up
             }
         }
 
-        for (int x = 0; x < VGA_WIDTH; x++) { // Clear last row
+        for (size_t x = 0; x < VGA_WIDTH; x++) { // Clear last row
             terminal_putentryat(' ', terminal.color, x, VGA_HEIGHT - 1);
         }
 
@@ -158,7 +158,7 @@ void terminal_initialize(void) {
 }
 
 void update_cursor() {
-    uint16_t pos = terminal.row * VGA_WIDTH + terminal.column;
+    size_t pos = terminal.row * VGA_WIDTH + terminal.column;
 
     outb(0x3D4, 0x0F);
     outb(0x3D5, (uint8_t)(pos & 0xFF));
@@ -167,7 +167,7 @@ void update_cursor() {
     outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
 
-void move_cursor(int x, int y) {
+void move_cursor(size_t x, size_t y) {
     cursor_x = x;
     cursor_y = y;
     update_cursor();
