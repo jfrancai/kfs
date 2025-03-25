@@ -24,14 +24,11 @@ CFLAGS := -I ./includes/ -g -ffreestanding -O2 -std=gnu99 $(WARNINGS)
 %.o: src/%.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
-boot.o: boot.s
-	$(TARGET)-as ./boot.s -o boot.o
-
-# interrupts.o: interrupts.s
-# 	nasm -f elf32 interrupts.s -o interrupts.o
-
 myos.bin: boot.o $(OBJFILES)
 	$(CC) -T linker.ld -o myos.bin -ffreestanding -O2 -nostdlib boot.o $(OBJFILES) -lgcc
+
+boot.o: boot.s
+	$(TARGET)-as ./boot.s -o boot.o
 
 myos.iso: myos.bin grub.cfg
 	mkdir -p isodir/boot/grub

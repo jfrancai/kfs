@@ -7,7 +7,7 @@
 
 #define NUM_SCREENS 9
 
-static uint16_t cursor_x = 0, cursor_y = 0;
+static size_t cursor_x = 0, cursor_y = 0;
 
 static uint16_t screen_buffers[NUM_SCREENS][2000];
 static size_t screen_rows[NUM_SCREENS] = {0}; // Initialize to zero
@@ -27,13 +27,13 @@ void terminal_setcolor(uint8_t color)
     terminal.color = color;
 }
 
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
+static void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
 {
     const size_t index = y * VGA_WIDTH + x;
     terminal.buffer[index] = vga_entry(c, color);
 }
 
-uint16_t terminal_getentryat(size_t x, size_t y)
+static uint16_t terminal_getentryat(size_t x, size_t y)
 {
     const size_t index = y * VGA_WIDTH + x;
     return terminal.buffer[index];
@@ -46,21 +46,28 @@ void terminal_putchar(char c)
         terminal.row++;
     } 
     else if (c == '\b' && terminal.column > 0) { // Handle Backspace
-        terminal.column--; // Move cursor left
-        terminal_putentryat(' ', terminal.color, terminal.column, terminal.row);
-        if (terminal.column == 0) {
-            terminal.row--; 
-            size_t last_col = VGA_WIDTH - 1; // Move to end of previous line
-            while (last_col > 0 && (terminal_getentryat(last_col, terminal.row) & 0xFF) == ' ') {
-                last_col--;
-            }
-            terminal.column = last_col + 1;
-        }
+		terminal.column--; // Move cursor left
+		// Shift all characters in the current row to the left by one position
+		for (size_t x = terminal.column; x < VGA_WIDTH - 1; x++) {
+			uint16_t next_char = terminal_getentryat(x + 1, terminal.row);
+			terminal_putentryat((char)(next_char & 0xFF), terminal.color, x, terminal.row);
+		}
+		// Clear the last character of the current line
+		terminal_putentryat(' ', terminal.color, VGA_WIDTH - 1, terminal.row);
+
+		if (terminal.column == 0) {
+			terminal.row--;
+			size_t last_col = VGA_WIDTH - 1; // Move to end of previous line
+			while (last_col > 0 && (terminal_getentryat(last_col, terminal.row) & 0xFF) == ' ') {
+				last_col--;
+			}
+			terminal.column = last_col + 1;
+		}
     } 
     else { // Print normal character
-        terminal_putentryat(c, terminal.color, terminal.column, terminal.row);
-        terminal.column++;
-    }
+		terminal_putentryat(c, terminal.color, terminal.column, terminal.row); // Insert new character
+		terminal.column++;
+	}
 
     if (terminal.column >= VGA_WIDTH) { // Move to next line if needed
         terminal.column = 0;
@@ -68,20 +75,21 @@ void terminal_putchar(char c)
     }
 
     if (terminal.row >= VGA_HEIGHT) { // Scroll screen if needed
-        for (int y = 1; y < VGA_HEIGHT; y++) {
-            for (int x = 0; x < VGA_WIDTH; x++) {
+        for (size_t y = 1; y < VGA_HEIGHT; y++) {
+            for (size_t x = 0; x < VGA_WIDTH; x++) {
                 uint16_t entry = terminal_getentryat(x, y); // Get previous row
-                terminal_putentryat(entry, terminal.color, x, y - 1); // Move up
+                terminal_putentryat((char)entry, terminal.color, x, y - 1); // Move up
             }
         }
 
-        for (int x = 0; x < VGA_WIDTH; x++) { // Clear last row
+        for (size_t x = 0; x < VGA_WIDTH; x++) { // Clear last row
             terminal_putentryat(' ', terminal.color, x, VGA_HEIGHT - 1);
         }
 
         terminal.row = VGA_HEIGHT - 1;
     }
 
+  
     // **Sync cursor with terminal position**
     cursor_x = terminal.column;
     cursor_y = terminal.row;
@@ -111,6 +119,16 @@ void terminal_writehex(uint8_t num)
     terminal_putchar(low_nibble);
 }
 
+static void terminal_render_header(void) {
+    const char* header = "Welcome - 42";
+    size_t x = (VGA_WIDTH / 2) - 6;
+    size_t y = 0;  // Always print at the first row
+
+    for (size_t i = 0; header[i] != '\0'; i++, x++) {
+        terminal_putentryat(header[i], VGA_COLOR_MAGENTA, x, y);
+    }
+}
+
 void switch_screen(uint8_t screen) {
     if (screen >= NUM_SCREENS) return;
 
@@ -126,11 +144,12 @@ void switch_screen(uint8_t screen) {
     cursor_x = terminal.column;
     cursor_y = terminal.row;
     update_cursor();
+    terminal_render_header();
 }
 
 void terminal_initialize(void) {
   for (size_t i = 0; i < NUM_SCREENS; i++) {
-    screen_rows[i] = 0;
+    screen_rows[i] = 1;
     screen_columns[i] = 0;
     uint8_t color = vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK);
     for (size_t y = 0; y < VGA_HEIGHT; y++) {
@@ -144,7 +163,7 @@ void terminal_initialize(void) {
   current_screen = 0;
   terminal.buffer = screen_buffers[current_screen];
 
-  terminal.row = 0;
+  terminal.row = 1;
   terminal.column = 0;
   terminal.color = vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK);
 
@@ -155,10 +174,11 @@ void terminal_initialize(void) {
       terminal.buffer[index] = vga_entry(' ', terminal.color);
     }
   }
+  terminal_render_header();
 }
 
 void update_cursor() {
-    uint16_t pos = terminal.row * VGA_WIDTH + terminal.column;
+    size_t pos = terminal.row * VGA_WIDTH + terminal.column;
 
     outb(0x3D4, 0x0F);
     outb(0x3D5, (uint8_t)(pos & 0xFF));
@@ -167,7 +187,7 @@ void update_cursor() {
     outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
 
-void move_cursor(int x, int y) {
+void move_cursor(size_t x, size_t y) {
     cursor_x = x;
     cursor_y = y;
     update_cursor();

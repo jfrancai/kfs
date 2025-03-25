@@ -22,10 +22,16 @@ char scancode_to_char_normal[MAX_SCANCODE] = {
 
 const char scancode_to_char_shifted[MAX_SCANCODE] = {
     0,  27, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b',  
-    '\t', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',  
-    0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~',
-    0, '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 
-    0, '*', 0, ' ', 0
+    '\t', 
+	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 
+	'\n',  
+    0, 
+	'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~',
+    0, 
+	'|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 
+    0, 
+	'*', 0, ' ',
+	0
 };
 
 
@@ -33,10 +39,10 @@ const char scancode_to_char_shifted[MAX_SCANCODE] = {
 void (*key_handlers[MAX_SCANCODE])(void) = { 0 };
 
 // Cursor movement handlers
-void move_cursor_up()    { if (terminal.row > 0) terminal.row--; update_cursor(); }
-void move_cursor_down()  { if (terminal.row < VGA_HEIGHT - 1) terminal.row++; update_cursor(); }
-void move_cursor_left()  { if (terminal.column > 0) terminal.column--; update_cursor(); }
-void move_cursor_right() { if (terminal.column < VGA_WIDTH - 1) terminal.column++; update_cursor(); }
+static void move_cursor_up(void)    { if (terminal.row > 0) terminal.row--; update_cursor(); }
+static void move_cursor_down(void)  { if (terminal.row < VGA_HEIGHT - 1) terminal.row++; update_cursor(); }
+static void move_cursor_left(void)  { if (terminal.column > 0) terminal.column--; update_cursor(); }
+static void move_cursor_right(void) { if (terminal.column < VGA_WIDTH - 1) terminal.column++; update_cursor(); }
 
 // Initialize the key handler table
 void init_key_handlers() {
