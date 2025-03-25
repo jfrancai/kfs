@@ -21,7 +21,8 @@ enum {
   SC_RSHIFT = 0x36,
   SC_RSHIFT_RELEASE = 0xB6,
   SC_F1 = 0x3B, 
-  SC_F3 = 0x3D 
+  SC_F3 = 0x3D,
+  SC_F9 = 0x43
 };
 
 void init_key_handlers(void);

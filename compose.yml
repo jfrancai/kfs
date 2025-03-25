@@ -1,0 +1,9 @@
+services:
+  kfs:
+    image: kfs:latest
+    container_name: kfs
+    volumes:
+      - ./:/kernel
+    tty: true
+    stdin_open: true
+

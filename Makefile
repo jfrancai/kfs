@@ -4,15 +4,12 @@ CC=$(TARGET)-gcc
 PROJDIRS := src includes tests
 
 SRCFILES := $(shell find $(PROJDIRS) -type f -name "*.c")
-$(info SRCFILES=$(SRCFILES))
 HDRFILES := $(shell find $(PROJDIRS) -type f -name "*.h")
 
 OBJFILES := $(patsubst src/%,%, $(patsubst %.c,%.o, $(SRCFILES)))
-$(info OBJFILES=$(OBJFILES))
 TSTFILES := $(patsubst %.c,%_t,$(SRCFILES))
 
 DEPFILES    := $(patsubst %.c,%.d,$(SRCFILES))
-$(info DEPFILES=$(DEPFILES))
 TSTDEPFILES := $(patsubst %,%.d,$(TSTFILES))
 
 ALLFILES := $(SRCFILES) $(HDRFILES) $(AUXFILES)
