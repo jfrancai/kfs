@@ -17,7 +17,6 @@ void kernel_main(void);
 void kernel_main(void) 
 {
   terminal_initialize();
-  terminal_writestring("Welcome - 42\n");
 
   update_cursor();
   init_key_handlers();
