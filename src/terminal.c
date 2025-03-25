@@ -5,7 +5,7 @@
 
 #define VIDEO_MEMORY (char*)0xB8000
 
-#define NUM_SCREENS 3
+#define NUM_SCREENS 9
 
 static uint16_t cursor_x = 0, cursor_y = 0;
 

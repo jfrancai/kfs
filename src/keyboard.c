@@ -56,7 +56,7 @@ void handle_scancode(uint8_t scancode) {
         alt_pressed = true;
     } else if (scancode == SC_ALT_RELEASE) { 
         alt_pressed = false;
-    } else if (alt_pressed && scancode >= SC_F1 && scancode <= SC_F3) { 
+    } else if (alt_pressed && scancode >= SC_F1 && scancode <= SC_F9) { 
         switch_screen(scancode - SC_F1);
     } else if (scancode < MAX_SCANCODE) {
         if (key_handlers[scancode]) {
