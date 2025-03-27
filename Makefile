@@ -37,6 +37,10 @@ myos.iso: myos.bin grub.cfg
 	grub-mkrescue -o myos.iso isodir
 
 all: myos.bin
+# TODO: docker build -t kfs . -> build docker image
+# docker-compose up -d 
+# docker exec -it kfs bash
+# TODO: mkdir -p tests 
 
 clean:
 	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) pdclib.a pdclib.tgz)

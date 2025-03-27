@@ -6,4 +6,3 @@ services:
       - ./:/kernel
     tty: true
     stdin_open: true
-
