@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libisl-dev \
     wget \
     make \
+	&& mkdir -p tests \
     ca-certificates \
     && mkdir -p /src \
     && cd /src \
