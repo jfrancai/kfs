@@ -1,5 +1,6 @@
 #include "terminal.h"
 #include "keyboard.h"
+#include "gdt.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -16,8 +17,8 @@ void kernel_main(void);
 
 void kernel_main(void) 
 {
+  gdt_init();
   terminal_initialize();
-
   update_cursor();
   init_key_handlers();
 
