@@ -21,3 +21,36 @@ static void gdt_set_gate(int num, uint32_t base, uint32_t limit,
 
     gdt[num].access      = access;
 }
+
+/* assign table to CPU -> force register segment use the new table */
+static inline void gdt_flush(void)
+{
+    __asm__ volatile (
+        "lgdt %0             \n\t"   /* 1. assign {limit,base} of gp into GDTR   */
+        "mov $0x10, %%ax     \n\t"   /* 2. 0x10 = selector kernel data        */
+        "mov %%ax, %%ds      \n\t"
+        "mov %%ax, %%es      \n\t"
+        "mov %%ax, %%fs      \n\t"
+        "mov %%ax, %%gs      \n\t"
+        "mov %%ax, %%ss      \n\t"   /*    assign 5 register data segment    */
+        "ljmp $0x08, $1f     \n\t"   /* 3. 0x08 = kernel code → far jump reload CS */
+        "1:                  \n\t"
+        : : "m"(gp) : "ax", "memory"
+    );
+}
+
+void gdt_init(void)
+{
+    gp.limit = (uint16_t)(sizeof(struct gdt_entry) * GDT_ENTRIES - 1);
+    gp.base  = GDT_ADDRESS;
+
+    gdt_set_gate(0, 0, 0x00000, 0x00, 0x00);  /* 0x00  null (obligated)   */
+    gdt_set_gate(1, 0, 0xFFFFF, 0x9A, 0xCF);  /* 0x08  kernel code       */
+    gdt_set_gate(2, 0, 0xFFFFF, 0x92, 0xCF);  /* 0x10  kernel data       */
+    gdt_set_gate(3, 0, 0xFFFFF, 0x92, 0xCF);  /* 0x18  kernel stack      */
+    gdt_set_gate(4, 0, 0xFFFFF, 0xFA, 0xCF);  /* 0x20  user code         */
+    gdt_set_gate(5, 0, 0xFFFFF, 0xF2, 0xCF);  /* 0x28  user data         */
+    gdt_set_gate(6, 0, 0xFFFFF, 0xF2, 0xCF);  /* 0x30  user stack        */
+
+    gdt_flush();
+}
