@@ -1,6 +1,7 @@
 #include "terminal.h"
 #include "keyboard.h"
 #include "gdt.h"
+#include "printk.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -22,6 +23,9 @@ void kernel_main(void)
   update_cursor();
   init_key_handlers();
 
+  printk("KFS_2 booted!\n");
+  printk("GDT base = %p, decimal = %d, hex = 0x%x\n", (void *)0x800, 2048, 2048);
+  
   while (1)
   {
     poll_keyboard();
