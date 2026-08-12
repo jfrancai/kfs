@@ -1,4 +1,4 @@
-TARGET=i386-elf
+TARGET=i686-elf
 CC=$(TARGET)-gcc
 
 PROJDIRS := src includes tests
