@@ -2,6 +2,7 @@
 #include "keyboard.h"
 #include "gdt.h"
 #include "printk.h"
+#include "stack.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -25,6 +26,7 @@ void kernel_main(void)
 
   printk("KFS_2 booted!\n");
   printk("GDT base = %p, decimal = %d, hex = 0x%x\n", (void *)0x800, 2048, 2048);
+  print_kernel_stack(256);
   
   while (1)
   {
