@@ -24,3 +24,12 @@ void* memcpy(void* dest, const void* src, size_t num) {
     }
     return dest;
 }
+
+int strcmp(const char* a, const char* b)
+{
+    while (*a && (*a == *b)) {
+        a++;
+        b++;
+    }
+    return (int)((unsigned char)*a - (unsigned char)*b);
+}

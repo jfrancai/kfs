@@ -1,6 +1,7 @@
 #include "keyboard.h"
 #include "ports.h"
 #include "terminal.h"
+#include "shell.h"
 
 static bool shift_pressed = false;
 static bool alt_pressed = false;
@@ -70,7 +71,8 @@ void handle_scancode(uint8_t scancode) {
         } else {
             char c = shift_pressed ? scancode_to_char_shifted[scancode] : scancode_to_char_normal[scancode];
             if (c) {
-                terminal_putchar(c);
+                //terminal_putchar(c); kfs-1
+		shell_putchar(c);
             }
         }
     }
