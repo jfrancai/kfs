@@ -192,3 +192,14 @@ void move_cursor(size_t x, size_t y) {
     cursor_y = y;
     update_cursor();
 }
+
+void terminal_clear(void)
+{
+    for (size_t y = 0; y < VGA_HEIGHT; y++)
+        for (size_t x = 0; x < VGA_WIDTH; x++)
+            terminal_putentryat(' ', terminal.color, x, y);
+    terminal.row = 1;         /* chừa dòng 0 cho header */
+    terminal.column = 0;
+    terminal_render_header();
+    update_cursor();
+}

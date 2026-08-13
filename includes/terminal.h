@@ -26,6 +26,7 @@ void terminal_writehex(uint8_t num);
 void move_cursor(size_t x, size_t y);
 void update_cursor(void);
 void switch_screen(uint8_t screen);
+void terminal_clear(void);
 
 #endif // TERMINAL_H
 
