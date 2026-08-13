@@ -1,6 +1,10 @@
 TARGET=i686-elf
 CC=$(TARGET)-gcc
 
+# Pick whichever grub-mkrescue exists: the plain one (Linux / 42 cluster) first,
+# then the i686-elf cross build installed via Homebrew on macOS.
+GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
+
 PROJDIRS := src includes tests
 
 SRCFILES := $(shell find $(PROJDIRS) -type f -name "*.c")
@@ -34,7 +38,7 @@ myos.iso: myos.bin grub.cfg
 	mkdir -p isodir/boot/grub
 	cp myos.bin isodir/boot/myos.bin
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	grub-mkrescue -o myos.iso isodir
+	$(GRUB_MKRESCUE) -o myos.iso isodir
 
 all: myos.bin
 # TODO: docker build -t kfs . -> build docker image
