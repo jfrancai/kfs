@@ -1,9 +1,9 @@
-# Dùng Clang để cross-compile trực tiếp sang target i386 freestanding
+# Using Clang to compile, assemble and link the kernel, bootloader and tests. The target is i386-unknown-none-elf, which is a generic 32-bit x86 target without any OS or standard library. The compiler is instructed to use the i386 architecture.
 CC := clang --target=i386-unknown-none-elf -march=i386
 AS := as --32
 LD := ld -m elf_i386
 
-# Tìm grub-mkrescue có sẵn trên hệ thống
+# Finding grub-mkrescue in PATH, or i386-elf-grub-mkrescue, or i686-elf-grub-mkrescue
 GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v i386-elf-grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
 
 PROJDIRS := src includes
@@ -31,11 +31,11 @@ all: myos.bin
 %.o: src/%.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Sửa boot.s: Dùng `as --32` (hoặc `nasm -f elf32` nếu boot.s viết bằng cú pháp Intel)
+#  boot.s: using 'as --32' to assemble the bootloader
 boot.o: boot.s
 	$(AS) ./boot.s -o boot.o
 
-# Sửa link: Dùng LD trực tiếp để không bị phụ thuộc vào libgcc ngoài
+# link: using LD directly to avoid dependency on external libgcc
 myos.bin: boot.o $(OBJFILES) linker.ld
 	$(LD) -T linker.ld -nostdlib boot.o $(OBJFILES) -o myos.bin
 
