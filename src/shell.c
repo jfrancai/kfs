@@ -45,7 +45,7 @@ static void cmd_halt(void)
 /* pause 1 round, empty looop, volatile so the compiler doesn't avoid */
 static void delay(void)
 {
-    for (volatile uint32_t i = 0; i < 30000000; i++)
+    for (volatile uint32_t i = 0; i < 80000000; i++)
         ;
 }
 
