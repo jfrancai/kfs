@@ -1,11 +1,12 @@
-TARGET=i686-elf
-CC=$(TARGET)-gcc
+# Using Clang to compile, assemble and link the kernel, bootloader and tests. The target is i386-unknown-none-elf, which is a generic 32-bit x86 target without any OS or standard library. The compiler is instructed to use the i386 architecture.
+CC := clang --target=i386-unknown-none-elf -march=i386
+AS := as --32
+LD := ld -m elf_i386
 
-# Pick whichever grub-mkrescue exists: the plain one (Linux / 42 cluster) first,
-# then the i686-elf cross build installed via Homebrew on macOS.
-GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
+# Finding grub-mkrescue in PATH, or i386-elf-grub-mkrescue, or i686-elf-grub-mkrescue
+GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v i386-elf-grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
 
-PROJDIRS := src includes tests
+PROJDIRS := src includes
 
 SRCFILES := $(shell find $(PROJDIRS) -type f -name "*.c")
 HDRFILES := $(shell find $(PROJDIRS) -type f -name "*.h")
@@ -25,14 +26,18 @@ WARNINGS := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
 
 CFLAGS := -I ./includes/ -g -ffreestanding -O2 -std=gnu99 $(WARNINGS)
 
+all: myos.bin
+
 %.o: src/%.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
-myos.bin: boot.o $(OBJFILES)
-	$(CC) -T linker.ld -o myos.bin -ffreestanding -O2 -nostdlib boot.o $(OBJFILES) -lgcc
-
+#  boot.s: using 'as --32' to assemble the bootloader
 boot.o: boot.s
-	$(TARGET)-as ./boot.s -o boot.o
+	$(AS) ./boot.s -o boot.o
+
+# link: using LD directly to avoid dependency on external libgcc
+myos.bin: boot.o $(OBJFILES) linker.ld
+	$(LD) -T linker.ld -nostdlib boot.o $(OBJFILES) -o myos.bin
 
 myos.iso: myos.bin grub.cfg
 	mkdir -p isodir/boot/grub
@@ -40,18 +45,13 @@ myos.iso: myos.bin grub.cfg
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	$(GRUB_MKRESCUE) -o myos.iso isodir
 
-all: myos.bin
-# TODO: docker build -t kfs . -> build docker image
-# docker-compose up -d 
-# docker exec -it kfs bash
-# TODO: mkdir -p tests 
-
 clean:
 	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) pdclib.a pdclib.tgz)
 	$(RM) boot.o 
 	$(RM) $(OBJFILES)
 	$(RM) myos.bin
 	$(RM) myos.iso
+	$(RM) -r isodir
 
 re: clean all
 
@@ -66,4 +66,4 @@ todolist:
 
 -include $(DEPFILES)
 
-.PHONY: boot.o all clean re start start-iso
+.PHONY: all clean re start start-iso

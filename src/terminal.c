@@ -177,7 +177,7 @@ void terminal_initialize(void) {
   terminal_render_header();
 }
 
-void update_cursor() {
+void update_cursor(void) {
     size_t pos = terminal.row * VGA_WIDTH + terminal.column;
 
     outb(0x3D4, 0x0F);
