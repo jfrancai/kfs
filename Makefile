@@ -48,7 +48,9 @@ myos.iso: myos.bin grub.cfg
 	mkdir -p isodir/boot/grub
 	cp myos.bin isodir/boot/myos.bin
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) -d "$(GRUB_BIOS_DIR)" -o $@ isodir
+	$(GRUB_MKRESCUE) -d "$(GRUB_BIOS_DIR)" -o $@ \
+		--compress=xz --fonts= --locales= --themes= \
+		--install-modules="multiboot normal" isodir
 
 clean:
 	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) pdclib.a pdclib.tgz)
