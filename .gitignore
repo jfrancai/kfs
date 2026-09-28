@@ -3,3 +3,4 @@
 *.bin
 *.xz
 isodir/
+.local/

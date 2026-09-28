@@ -5,6 +5,7 @@ LD := ld -m elf_i386
 
 # Finding grub-mkrescue in PATH, or i386-elf-grub-mkrescue, or i686-elf-grub-mkrescue
 GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v grub2-mkrescue 2>/dev/null || command -v i386-elf-grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
+GRUB_BIOS_DIR := $(if $(wildcard .local/grub/usr/lib/grub/i386-pc),.local/grub/usr/lib/grub/i386-pc,/usr/lib/grub/i386-pc)
 
 PROJDIRS := src includes
 
@@ -43,11 +44,11 @@ myos.bin: boot.o $(OBJFILES) linker.ld
 
 myos.iso: myos.bin grub.cfg
 	@test -n "$(GRUB_MKRESCUE)" || (echo "grub-mkrescue introuvable" >&2; false)
+	@test -d "$(GRUB_BIOS_DIR)" || (echo "GRUB BIOS modules missing: install grub2-pc-modules" >&2; false)
 	mkdir -p isodir/boot/grub
 	cp myos.bin isodir/boot/myos.bin
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) -o $@ --compress=xz --fonts= --locales= --themes= \
-		--install-modules="multiboot normal" isodir
+	$(GRUB_MKRESCUE) -d "$(GRUB_BIOS_DIR)" -o $@ isodir
 
 clean:
 	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) pdclib.a pdclib.tgz)
@@ -63,7 +64,7 @@ start: myos.bin
 	qemu-system-i386 -kernel myos.bin
 
 start-iso: myos.iso
-	qemu-system-i386 -cdrom myos.iso
+	qemu-system-i386 -boot d -cdrom myos.iso
 
 todolist:
 	-@for file in $(ALLFILES:Makefile=); do fgrep -H -e TODO -e FIXME $$file; done; true
