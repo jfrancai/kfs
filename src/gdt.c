@@ -32,7 +32,8 @@ static inline void gdt_flush(void)
         "mov %%ax, %%es      \n\t"
         "mov %%ax, %%fs      \n\t"
         "mov %%ax, %%gs      \n\t"
-        "mov %%ax, %%ss      \n\t"   /*    assign 5 register data segment    */
+        "mov $0x18, %%ax     \n\t"   /* kernel stack segment */
+        "mov %%ax, %%ss      \n\t"
         "ljmp $0x08, $1f     \n\t"   /* 3. 0x08 = kernel code → far jump reload CS */
         "1:                  \n\t"
         : : "m"(gp) : "ax", "memory"

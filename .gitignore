@@ -1,5 +1,5 @@
 *.o
-*.iso
+*.d
 *.bin
 *.xz
 isodir/

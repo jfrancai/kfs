@@ -39,7 +39,8 @@ static void cmd_reboot(void)
 static void cmd_halt(void)
 {
     printk("halted. bye.\n");
-    __asm__ volatile ("cli; hlt");  /* turn off then stop CPU */
+    for (;;)
+        __asm__ volatile ("cli; hlt");
 }
 
 /* pause 1 round, empty looop, volatile so the compiler doesn't avoid */
@@ -89,7 +90,7 @@ static void run_command(const char *cmd)
 {
     if (cmd[0] == '\0')              return;   /* ignore empty line */
     else if (!strcmp(cmd, "help"))   cmd_help();
-    else if (!strcmp(cmd, "stack"))  print_kernel_stack(256);
+    else if (!strcmp(cmd, "stack"))  print_kernel_stack();
     else if (!strcmp(cmd, "clear"))  terminal_clear();
     else if (!strcmp(cmd, "reboot")) cmd_reboot();
     else if (!strcmp(cmd, "halt"))   cmd_halt();

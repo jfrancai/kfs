@@ -4,7 +4,7 @@ AS := as --32
 LD := ld -m elf_i386
 
 # Finding grub-mkrescue in PATH, or i386-elf-grub-mkrescue, or i686-elf-grub-mkrescue
-GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v i386-elf-grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
+GRUB_MKRESCUE := $(shell command -v grub-mkrescue 2>/dev/null || command -v grub2-mkrescue 2>/dev/null || command -v i386-elf-grub-mkrescue 2>/dev/null || command -v i686-elf-grub-mkrescue 2>/dev/null)
 
 PROJDIRS := src includes
 
@@ -14,7 +14,7 @@ HDRFILES := $(shell find $(PROJDIRS) -type f -name "*.h")
 OBJFILES := $(patsubst src/%,%, $(patsubst %.c,%.o, $(SRCFILES)))
 TSTFILES := $(patsubst %.c,%_t,$(SRCFILES))
 
-DEPFILES    := $(patsubst %.c,%.d,$(SRCFILES))
+DEPFILES    := $(patsubst %.o,%.d,$(OBJFILES))
 TSTDEPFILES := $(patsubst %,%.d,$(TSTFILES))
 
 ALLFILES := $(SRCFILES) $(HDRFILES) $(AUXFILES)
@@ -24,9 +24,11 @@ WARNINGS := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align \
             -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
             -Wconversion -Wstrict-prototypes
 
-CFLAGS := -I ./includes/ -g -ffreestanding -O2 -std=gnu99 $(WARNINGS)
+CFLAGS := -I ./includes/ -g -O2 -std=gnu99 \
+          -ffreestanding -fno-builtin -fno-stack-protector -fno-exceptions \
+          -nostdlib -nodefaultlibs -fno-omit-frame-pointer -MMD -MP $(WARNINGS)
 
-all: myos.bin
+all: myos.iso
 
 %.o: src/%.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -40,10 +42,12 @@ myos.bin: boot.o $(OBJFILES) linker.ld
 	$(LD) -T linker.ld -nostdlib boot.o $(OBJFILES) -o myos.bin
 
 myos.iso: myos.bin grub.cfg
+	@test -n "$(GRUB_MKRESCUE)" || (echo "grub-mkrescue introuvable" >&2; false)
 	mkdir -p isodir/boot/grub
 	cp myos.bin isodir/boot/myos.bin
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) -o myos.iso isodir
+	$(GRUB_MKRESCUE) -o $@ --compress=xz --fonts= --locales= --themes= \
+		--install-modules="multiboot normal" isodir
 
 clean:
 	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) pdclib.a pdclib.tgz)

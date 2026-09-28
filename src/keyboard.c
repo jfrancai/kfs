@@ -46,7 +46,7 @@ static void move_cursor_left(void)  { if (terminal.column > 0) terminal.column--
 static void move_cursor_right(void) { if (terminal.column < VGA_WIDTH - 1) terminal.column++; update_cursor(); }
 
 // Initialize the key handler table
-void init_key_handlers() {
+void init_key_handlers(void) {
     key_handlers[SC_UP] = move_cursor_up;
     key_handlers[SC_DOWN] = move_cursor_down;
     key_handlers[SC_LEFT] = move_cursor_left;
@@ -79,7 +79,7 @@ void handle_scancode(uint8_t scancode) {
 }
 
 // Poll keyboard input
-void poll_keyboard() {
+void poll_keyboard(void) {
     if (inb(KEYBOARD_STATUS_PORT) & 1) { 
         uint8_t scancode = inb(KEYBOARD_DATA_PORT);
         handle_scancode(scancode);
