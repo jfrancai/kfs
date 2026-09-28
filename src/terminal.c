@@ -75,12 +75,10 @@ void terminal_putchar(char c)
     }
 
     if (terminal.row >= VGA_HEIGHT) { // Scroll screen if needed
-        for (size_t y = 1; y < VGA_HEIGHT; y++) {
-            for (size_t x = 0; x < VGA_WIDTH; x++) {
-                uint16_t entry = terminal_getentryat(x, y); // Get previous row
-                terminal_putentryat((char)entry, terminal.color, x, y - 1); // Move up
-            }
-        }
+        for (size_t y = 2; y < VGA_HEIGHT; y++)
+            for (size_t x = 0; x < VGA_WIDTH; x++)
+                terminal.buffer[(y - 1) * VGA_WIDTH + x] =
+                    terminal.buffer[y * VGA_WIDTH + x];
 
         for (size_t x = 0; x < VGA_WIDTH; x++) { // Clear last row
             terminal_putentryat(' ', terminal.color, x, VGA_HEIGHT - 1);

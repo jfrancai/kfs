@@ -4,6 +4,7 @@
 #include "string.h"
 #include "stack.h"
 #include "ports.h"
+#include "gdt.h"
 
 #define SHELL_BUFSIZE 256
 
@@ -22,6 +23,7 @@ static void cmd_help(void)
     printk("  echo   - print text back\n");
     printk("  duckie - dancing duck :)\n");
     printk("  stack  - dump the kernel stack\n");
+    printk("  gdt    - show the global descriptor table\n");
     printk("  clear  - clear the screen\n");
     printk("  reboot - restart the machine\n");
     printk("  halt   - stop the CPU\n");
@@ -43,7 +45,7 @@ static void cmd_halt(void)
         __asm__ volatile ("cli; hlt");
 }
 
-/* pause 1 round, empty looop, volatile so the compiler doesn't avoid */
+/* Busy-wait for one frame; volatile prevents the compiler from removing it. */
 static void delay(void)
 {
     for (volatile uint32_t i = 0; i < 80000000; i++)
@@ -91,6 +93,7 @@ static void run_command(const char *cmd)
     if (cmd[0] == '\0')              return;   /* ignore empty line */
     else if (!strcmp(cmd, "help"))   cmd_help();
     else if (!strcmp(cmd, "stack"))  print_kernel_stack();
+    else if (!strcmp(cmd, "gdt"))    gdt_print();
     else if (!strcmp(cmd, "clear"))  terminal_clear();
     else if (!strcmp(cmd, "reboot")) cmd_reboot();
     else if (!strcmp(cmd, "halt"))   cmd_halt();

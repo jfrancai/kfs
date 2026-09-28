@@ -1,24 +1,40 @@
 # kfs-2
 
+## Usage
 
-## How to use:
+Run the kernel directly with QEMU:
 
-
-```
+```sh
 make start
 ```
 
-## How to check 0x800 
+To build and run the ISO image:
 
-```
+```sh
 make re
-qemu-system-i386 -kernel myos.bin -monitor stdio
-info registers
+make start-iso
 ```
--> Check GDT = 0x800
 
-GDT=     00000800 00000037          ← table at 0x800 ✅
-CS =0008 00000000 ffffffff 00cf9a00 ← CS use selector @ 0x08, access 9a, flat 4GB
-DS =0010 00000000 ffffffff 00cf9300 ← DS/ES/SS/FS/GS use 0x10, access 93
+## Verify the GDT at 0x800
+
+The kernel prints the GDT after terminal initialization, without using the
+QEMU monitor:
+
+```
+GDTR base=00000800 limit=0037  CS=0008 DS=0010 SS=0018
+00 base=00000000 lim=00000000 acc=00 DPL0 null
+08 base=00000000 lim=ffffffff acc=9a DPL0 code
+10 base=00000000 lim=ffffffff acc=93 DPL0 data
+18 base=00000000 lim=ffffffff acc=93 DPL0 data
+20 base=00000000 lim=ffffffff acc=fa DPL3 code
+28 base=00000000 lim=ffffffff acc=f2 DPL3 data
+30 base=00000000 lim=ffffffff acc=f2 DPL3 data
+```
+
+The data descriptor is initialized with `0x92`; the processor sets the Accessed
+bit, so it is displayed as `0x93`. The stack segment selector is `0x18`.
+
+In the kernel shell, `gdt` prints the table again and `stack` prints the stack
+dump and symbolic trace.
 
 
