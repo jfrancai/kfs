@@ -20,13 +20,18 @@ enum {
   SC_LSHIFT_RELEASE = 0xAA,
   SC_RSHIFT = 0x36,
   SC_RSHIFT_RELEASE = 0xB6,
+  SC_CTRL = 0x1D,
+  SC_CTRL_RELEASE = 0x9D,
+  SC_C = 0x2E,
   SC_F1 = 0x3B, 
   SC_F3 = 0x3D,
   SC_F9 = 0x43
 };
 
 void init_key_handlers(void);
-void poll_keyboard(void);
+void keyboard_init(void);
+void keyboard_process(void);
+int keyboard_pending(void);
 void handle_scancode(uint8_t scancode);
 
 #endif // KEYBOARD_H

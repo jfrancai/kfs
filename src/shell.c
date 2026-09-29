@@ -5,15 +5,29 @@
 #include "stack.h"
 #include "ports.h"
 #include "gdt.h"
+#include "idt.h"
+#include "panic.h"
+#include "signal.h"
+#include "syscall.h"
+#include "timer.h"
 
 #define SHELL_BUFSIZE 256
 
 static char line[SHELL_BUFSIZE];
 static size_t len = 0;
+static int running = 0;     /* a command is executing */
 
 static void prompt(void)
 {
     printk("kfs> ");
+}
+
+/* Print the prompt and the half-typed line again after async output. */
+static void redraw(void)
+{
+    prompt();
+    for (size_t i = 0; i < len; i++)
+        terminal_putchar(line[i]);
 }
 
 static void cmd_help(void)
@@ -24,32 +38,28 @@ static void cmd_help(void)
     printk("  duckie - dancing duck :)\n");
     printk("  stack  - dump the kernel stack\n");
     printk("  gdt    - show the global descriptor table\n");
+    printk("  idt    - show the interrupt descriptor table\n");
+    printk("  uptime - timer ticks since boot\n");
+    printk("  kill N - schedule signal N (2 INT,10 USR1,14 ALRM,15 TERM)\n");
+    printk("  alarm S [N] - schedule signal N (default 14) in S seconds\n");
+    printk("  syscall - write through int 0x80\n");
+    printk("  int3 / div0 / gpf - trigger an exception\n");
+    printk("  panic  - kernel panic (stack saved, registers cleaned)\n");
     printk("  clear  - clear the screen\n");
     printk("  reboot - restart the machine\n");
     printk("  halt   - stop the CPU\n");
+    printk("  Ctrl+C sends SIGINT\n");
 }
 
 static void cmd_reboot(void)
 {
     uint8_t status = 0x02;
+
+    __asm__ volatile ("cli");
     while (status & 0x02)          /* wait input buffer of 8042 empty */
         status = inb(0x64);
     outb(0x64, 0xFE);              /* signal reset CPU */
     __asm__ volatile ("hlt");
-}
-
-static void cmd_halt(void)
-{
-    printk("halted. bye.\n");
-    for (;;)
-        __asm__ volatile ("cli; hlt");
-}
-
-/* Busy-wait for one frame; volatile prevents the compiler from removing it. */
-static void delay(void)
-{
-    for (volatile uint32_t i = 0; i < 80000000; i++)
-        ;
 }
 
 static void cmd_duckie(void)
@@ -70,7 +80,7 @@ static void cmd_duckie(void)
     for (int i = 0; i < 8; i++) {
         terminal_clear();
         printk("%s", (i % 2 == 0) ? frame_a : frame_b);
-        delay();
+        timer_sleep(TIMER_HZ / 2);
     }
     terminal_clear();
     printk("quack quack! :)\n");
@@ -88,15 +98,89 @@ static int starts_with(const char *s, const char *prefix)
     return 1;
 }
 
-static void run_command(const char *cmd)
+/* Parse an unsigned decimal number, move *s past it. -1 if none. */
+static int parse_uint(const char **s)
+{
+    int n = 0;
+
+    while (**s == ' ')
+        (*s)++;
+    if (**s < '0' || **s > '9')
+        return -1;
+    while (**s >= '0' && **s <= '9')
+        n = n * 10 + (*(*s)++ - '0');
+    return n;
+}
+
+static void cmd_kill(const char *arg)
+{
+    int sig = parse_uint(&arg);
+
+    if (signal_schedule(sig) < 0)
+        printk("usage: kill <1-31>\n");
+    else
+        printk("%s scheduled\n", signal_name(sig));
+}
+
+static void cmd_alarm(const char *arg)
+{
+    int secs = parse_uint(&arg);
+    int sig = parse_uint(&arg);
+
+    if (sig < 0)
+        sig = SIGALRM;
+    if (secs < 0 || signal_schedule_in(sig, (uint32_t)secs * TIMER_HZ) < 0)
+        printk("usage: alarm <seconds> [signal]\n");
+    else
+        printk("%s in %d s\n", signal_name(sig), secs);
+}
+
+static void cmd_syscall(void)
+{
+    static const char msg[] = "hello from int 0x80\n";
+    uint32_t ret;
+
+    __asm__ volatile ("int $0x80"
+                      : "=a"(ret)
+                      : "a"(SYS_WRITE), "b"(msg), "c"(sizeof msg - 1)
+                      : "memory");
+    printk("sys_write returned %u\n", ret);
+    __asm__ volatile ("int $0x80" : "=a"(ret) : "a"(SYS_TICKS));
+    printk("sys_ticks returned %u\n", ret);
+}
+
+static void cmd_div0(void)
+{
+    volatile int zero = 0;
+    volatile int result = 42 / zero;   /* #DE, vector 0x00 */
+    (void)result;
+}
+
+static void cmd_gpf(void)
+{
+    /* Loading a selector past the GDT limit raises #GP, vector 0x0D. */
+    __asm__ volatile ("movw $0x80, %%ax; movw %%ax, %%ds" : : : "ax");
+}
+
+void shell_run_command(const char *cmd)
 {
     if (cmd[0] == '\0')              return;   /* ignore empty line */
     else if (!strcmp(cmd, "help"))   cmd_help();
     else if (!strcmp(cmd, "stack"))  print_kernel_stack();
     else if (!strcmp(cmd, "gdt"))    gdt_print();
+    else if (!strcmp(cmd, "idt"))    idt_print();
+    else if (!strcmp(cmd, "uptime"))
+        printk("%u ticks (%u s)\n", timer_ticks(), timer_ticks() / TIMER_HZ);
+    else if (starts_with(cmd, "kill "))  cmd_kill(cmd + 5);
+    else if (starts_with(cmd, "alarm ")) cmd_alarm(cmd + 6);
+    else if (!strcmp(cmd, "syscall")) cmd_syscall();
+    else if (!strcmp(cmd, "int3"))   __asm__ volatile ("int3");
+    else if (!strcmp(cmd, "div0"))   cmd_div0();
+    else if (!strcmp(cmd, "gpf"))    cmd_gpf();
+    else if (!strcmp(cmd, "panic"))  panic("panic requested from the shell");
     else if (!strcmp(cmd, "clear"))  terminal_clear();
     else if (!strcmp(cmd, "reboot")) cmd_reboot();
-    else if (!strcmp(cmd, "halt"))   cmd_halt();
+    else if (!strcmp(cmd, "halt"))   system_halt("halted.");
     else if (!strcmp(cmd, "duckie")) cmd_duckie();
     else if (starts_with(cmd, "echo") && (cmd[4] == ' ' || cmd[4] == '\0')) {
         const char *arg = cmd + 4;         /* skip "echo" */
@@ -107,9 +191,31 @@ static void run_command(const char *cmd)
     else printk("unknown command: %s\n", cmd);
 }
 
+/* Ctrl+C: drop the current line, like a Unix shell. */
+static void on_sigint(int sig)
+{
+    (void)sig;
+    printk("^C\n");
+    len = 0;
+    prompt();
+}
+
+/* Signals the shell chooses to catch just print a message. */
+static void on_signal(int sig)
+{
+    printk("\n[signal] caught %s (%d)\n", signal_name(sig), sig);
+    if (!running)
+        redraw();
+}
+
 void shell_init(void)
 {
     len = 0;
+    signal(SIGINT, on_sigint);
+    signal(SIGALRM, on_signal);
+    signal(SIGUSR1, on_signal);
+    signal(SIGUSR2, on_signal);
+    signal(SIGTRAP, on_signal);
     prompt();
 }
 
@@ -119,7 +225,9 @@ void shell_putchar(char c)
     if (c == '\n') {
         line[len] = '\0';
         terminal_putchar('\n');
-        run_command(line);
+        running = 1;
+        shell_run_command(line);
+        running = 0;
         len = 0;
         prompt();
     } else if (c == '\b') {

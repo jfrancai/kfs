@@ -12,7 +12,10 @@ PROJDIRS := src includes
 SRCFILES := $(shell find $(PROJDIRS) -type f -name "*.c")
 HDRFILES := $(shell find $(PROJDIRS) -type f -name "*.h")
 
-OBJFILES := $(patsubst src/%,%, $(patsubst %.c,%.o, $(SRCFILES)))
+ASMFILES := $(shell find src -type f -name "*.s")
+
+OBJFILES := $(patsubst src/%,%, $(patsubst %.c,%.o, $(SRCFILES))) \
+            $(patsubst src/%.s,%.o, $(ASMFILES))
 TSTFILES := $(patsubst %.c,%_t,$(SRCFILES))
 
 DEPFILES    := $(patsubst %.o,%.d,$(OBJFILES))
@@ -33,6 +36,10 @@ all: myos.iso
 
 %.o: src/%.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
+
+# interrupt stubs and other assembly in src/
+%.o: src/%.s Makefile
+	$(AS) $< -o $@
 
 #  boot.s: using 'as --32' to assemble the bootloader
 boot.o: boot.s
