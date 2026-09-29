@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void print_kernel_stack(uint32_t nbytes);
+void print_kernel_stack(void);
 
 #endif

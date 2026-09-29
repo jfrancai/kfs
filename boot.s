@@ -32,8 +32,10 @@ undefined behavior.
 */
 .section .bss
 .align 16
+.global stack_bottom
 stack_bottom:
 .skip 16384 # 16 KiB
+.global stack_top
 stack_top:
 
 /*
@@ -64,6 +66,7 @@ _start:
 	in assembly as languages such as C cannot function without a stack.
 	*/
 	mov $stack_top, %esp
+	xor %ebp, %ebp
 
 	/*
 	This is a good place to initialize crucial processor state before the
